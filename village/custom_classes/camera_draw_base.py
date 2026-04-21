@@ -14,6 +14,7 @@ class CameraDrawBase:
     def draw(self, cam: CameraBase) -> None:
         """Draws on the camera frame based on the camera's state.
         Args:
-            cam (CameraBase): The camera instance providing the frame and state.
+            cam (CameraBase): The camera instance
+            providing the frame and state.
         """
         pass
