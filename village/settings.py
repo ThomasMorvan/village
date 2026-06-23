@@ -597,35 +597,35 @@ a different version, please update it by following the instructions at sanworks.
 camera_settings = [
     Setting(
         "AREA1_CORRIDOR",
-        [100, 300, 200, 350, 100],
+        [100, 300, 200, 350, 100, 100],
         list[int],
         """The first area of the corridor, located between the homecage and the first
 door. Values include left, top, right, and bottom coordinates, along with the
-detection threshold.""",
+day and night detection thresholds.""",
     ),
     Setting(
         "AREA2_CORRIDOR",
-        [200, 300, 300, 350, 100],
+        [200, 300, 300, 350, 100, 100],
         list[int],
         """The second area of the corridor, located between the first door and the
 area3. Values include left, top, right, and bottom coordinates, along with the
-detection threshold.""",
+day and night detection thresholds.""",
     ),
     Setting(
         "AREA3_CORRIDOR",
-        [300, 300, 400, 350, 100],
+        [300, 300, 400, 350, 100, 100],
         list[int],
         """The third area of the corridor, located between the area2 and the second
 door. Values include left, top, right, and bottom coordinates, along with the
-detection threshold.""",
+day and night detection thresholds.""",
     ),
     Setting(
         "AREA4_CORRIDOR",
-        [400, 300, 500, 350, 100],
+        [400, 300, 500, 350, 100, 100],
         list[int],
         """The fourth area of the corridor, located between the second door and the
 operant box. Values include left, top, right, and bottom coordinates, along with the
-detection threshold.""",
+day and night detection thresholds.""",
     ),
     Setting(
         "AREA1_BOX",

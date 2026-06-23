@@ -100,6 +100,7 @@ class LabelButtons:
             "right": 2,
             "bottom": 3,
             "threshold": 4,
+            "threshold_night": 5,
             "empty_limit": 0,
             "subject_limit": 1,
             "lens_position": -1,
@@ -112,6 +113,7 @@ class LabelButtons:
             "right": width_res,
             "bottom": height_res,
             "threshold": 255,
+            "threshold_night": 255,
             "empty_limit": 1000000,
             "subject_limit": 1000000,
             "lens_position": 10,
@@ -124,6 +126,7 @@ class LabelButtons:
             "right": "\u2192",
             "bottom": "\u2193",
             "threshold": "\u2191",
+            "threshold_night": "\u2191",
             "empty_limit": "\u2191",
             "subject_limit": "\u2191",
             "lens_position": "\u2191",
@@ -136,6 +139,7 @@ class LabelButtons:
             "right": "\u2190",
             "bottom": "\u2191",
             "threshold": "\u2193",
+            "threshold_night": "\u2193",
             "empty_limit": "\u2193",
             "subject_limit": "\u2193",
             "lens_position": "\u2193",
@@ -213,6 +217,7 @@ class LabelButtons:
                 "right",
                 "bottom",
                 "threshold",
+                "threshold_night",
                 "empty_limit",
                 "subject_limit",
             ]:
@@ -244,6 +249,7 @@ class LabelButtons:
                 "right",
                 "bottom",
                 "threshold",
+                "threshold_night",
                 "empty_limit",
                 "subject_limit",
             ]:
@@ -656,6 +662,7 @@ class CorridorLayout(Layout):
     def toggle_visible_button(self, value: str, key: str) -> None:
         manager.visible_corridor_cycle = Cycle[value]
         settings.set(key, value)
+        cam_corridor.change = True
         match value:
             case "OFF":
                 visible_light_corridor.off()

@@ -588,6 +588,14 @@ class Manager:
             ]
         )
 
+    def corridor_visible_on(self) -> bool:
+        """Whether the corridor visible light is (or, in AUTO, will be) on."""
+        if self.visible_corridor_cycle == Cycle.ON:
+            return True
+        if self.visible_corridor_cycle == Cycle.OFF:
+            return False
+        return self.cycle_change_detector.cycle_text == "DAY"
+
     def check_corridor_lights(self) -> None:
         """Checks the state of the corridor lights and sets them based
         on the current cycle."""
@@ -597,11 +605,7 @@ class Manager:
             f"ir={self.ir_corridor_cycle} cycle={cycle}"
         )
 
-        if self.visible_corridor_cycle == Cycle.ON:
-            visible_light_corridor.on()
-        elif self.visible_corridor_cycle == Cycle.OFF:
-            visible_light_corridor.off()
-        elif cycle == "DAY":
+        if self.corridor_visible_on():
             visible_light_corridor.on()
         else:
             visible_light_corridor.off()

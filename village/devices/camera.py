@@ -266,9 +266,16 @@ class Camera:
         self.thresholds: list[int] = []
         self.number_of_areas = 4
 
+        # Corridor areas carry two thresholds: index 4 = day (visible light,
+        # black mouse), index 5 = night (IR only, greyish mouse). Keyed to the
+        # actual visible-light state so it follows AUTO and manual overrides.
+        # Reloaded on cycle change / light toggle / edit via self.change.
+        night = self.name == "CORRIDOR" and not manager.corridor_visible_on()
         for i in range(1, self.number_of_areas + 1):
-            self.areas.append(settings.get("AREA" + str(i) + "_" + self.name)[0:4])
-            self.thresholds.append(settings.get("AREA" + str(i) + "_" + self.name)[4])
+            area = settings.get("AREA" + str(i) + "_" + self.name)
+            self.areas.append(area[0:4])
+            self.thresholds.append(area[5]
+                                   if (night and len(area) > 5) else area[4])
 
         # areas active and allowed settings
         self.areas_active: list[bool] = []

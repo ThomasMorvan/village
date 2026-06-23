@@ -9,6 +9,9 @@ from typing import Any
 
 from village.calibration.bpod_water_calibration import BpodWaterCalibration
 from village.calibration.camera_calibration import CameraCalibration
+from village.calibration.corridor_threshold_calibration import (
+    CorridorThresholdCalibration,
+)
 from village.calibration.sound_calibration import SoundCalibration
 from village.custom_classes.after_session_base import AfterSessionBase
 from village.custom_classes.auto_no_mouse_base import AutoNoMouseBase
@@ -57,7 +60,12 @@ def import_all(manager) -> None:
     auto_no_mouse_correct = False
     sound_path = ""
 
-    for cal_cls in (BpodWaterCalibration, SoundCalibration, CameraCalibration):
+    for cal_cls in (
+        BpodWaterCalibration,
+        SoundCalibration,
+        CameraCalibration,
+        CorridorThresholdCalibration,
+    ):
         instance = cal_cls()
         setattr(cal_cls, "_instance", instance)
         setattr(manager.calibrations, instance.name, instance)
@@ -171,6 +179,7 @@ def import_all(manager) -> None:
                     CameraCalibration,
                     SoundCalibration,
                     BpodWaterCalibration,
+                    CorridorThresholdCalibration,
                 ):
                     if not hasattr(manager.calibrations, cls.name):
                         instance = cls()
