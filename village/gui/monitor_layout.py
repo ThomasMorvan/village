@@ -1454,6 +1454,15 @@ class DetectionLayout(Layout):
         self.lbs: list[LabelButtons] = []
 
         if manager.use_of_corridor:
+            # Ensure corridor areas carry a night threshold (index 5); older
+            # saved settings only have 5 elements. Defaults to the day value.
+            for i in range(1, 5):
+                key = "AREA" + str(i) + "_CORRIDOR"
+                v = list(settings.get(key))
+                if len(v) == 5:
+                    v.append(v[4])
+                    settings.set(key, v)
+
             self.draw_area_buttons_corridor(
                 "AREA1_CORRIDOR", 2, 2, self.color_area1_str
             )
@@ -1608,6 +1617,7 @@ class DetectionLayout(Layout):
             "top",
             "bottom",
             "threshold",
+            "threshold_night",
         ):
             lb = LabelButtons(name, direction, row, column, 8, color, self)
             self.lbs.append(lb)
