@@ -80,6 +80,7 @@ os.environ["QT_SCALE_FACTOR"] = "1"
 log.telegram_bot = telegram_bot
 log.cam = cam_corridor
 import_all(manager)
+telegram_bot.register_custom(manager.custom_telegram_commands)
 manager.send_heartbeat()
 manager.errors += (
     cam_corridor.error

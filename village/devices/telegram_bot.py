@@ -134,6 +134,21 @@ class TelegramBot:
         except Exception:
             log.error("Telegram error sending plot", exception=traceback.format_exc())
 
+    def register_custom(self, commands: list) -> None:
+        """Registers custom commands collected from the project code directory.
+
+        Called from main after import_all has populated the list. add_handler
+        works on the already-running application.
+
+        Args:
+            commands (list): TelegramCommandBase instances.
+        """
+        for c in commands:
+            if c.command:
+                self.application.add_handler(
+                    CommandHandler(c.command, c.handler)
+                )
+
     async def main(self) -> None:
         """Main asyncio loop for the bot application."""
         self.application = ApplicationBuilder().token(self.token).build()

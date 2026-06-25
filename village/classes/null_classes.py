@@ -91,6 +91,10 @@ class NullTelegramBot:
         """
         return
 
+    def register_custom(self, commands: list) -> None:
+        """No-op: no bot to register commands on."""
+        return
+
 
 class NullScale:
     error: str = "Error connecting to the scale "
