@@ -701,6 +701,20 @@ class Camera:
             self.x_position = -1
             self.y_position = -1
 
+    def _add_custom_area_mask(self, mask: np.ndarray, invert: bool) -> None:
+        if self.name != "BOX" or not manager.custom_areas:
+            return
+        h, w = self.gray_frame.shape[:2]
+        flag = cv2.THRESH_BINARY_INV if invert else cv2.THRESH_BINARY
+        for area in manager.custom_areas:
+            if not area.active:
+                continue
+            _, frame_bin = cv2.threshold(self.gray_frame, area.threshold,
+                                         255, flag)
+            inside = cv2.bitwise_and(frame_bin, frame_bin,
+                                     mask=area.mask(h, w))
+            np.maximum(mask, inside, out=mask)
+
     def detect_black_position_contours(self) -> None:
         """Detects position of black mouse using contours."""
         mask = np.zeros_like(self.gray_frame, dtype=np.uint8)
@@ -721,6 +735,8 @@ class Camera:
             else:
                 self.masks[index] = -1
                 self.counts[index] = -1
+
+        self._add_custom_area_mask(mask, invert=True)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -767,6 +783,8 @@ class Camera:
             else:
                 self.masks[index] = -1
                 self.counts[index] = -1
+
+        self._add_custom_area_mask(mask, invert=False)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 

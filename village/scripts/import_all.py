@@ -19,6 +19,7 @@ from village.custom_classes.calibration_base import CalibrationBase
 from village.custom_classes.camera_draw_base import CameraDrawBase
 from village.custom_classes.camera_trigger_base import CameraTriggerBase
 from village.custom_classes.change_cycle_base import ChangeCycleBase
+from village.custom_classes.custom_area_base import CustomAreaBase
 from village.custom_classes.direct_functions_base import DirectFunctionsBase
 from village.custom_classes.online_plot_base import OnlinePlotBase
 from village.custom_classes.session_plot_base import SessionPlotBase
@@ -151,6 +152,8 @@ def import_all(manager) -> None:
                         y = cls()
                         manager.change_cycle = y
                         change_cycle_correct = True
+                elif issubclass(cls, CustomAreaBase) and cls != CustomAreaBase:
+                    manager.custom_areas.append(cls())
                 elif issubclass(cls, CameraTriggerBase) and cls != CameraTriggerBase:
                     camera_trigger_found += 1
                     if camera_trigger_found == 1:

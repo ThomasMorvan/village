@@ -31,6 +31,7 @@ from village.custom_classes.auto_no_mouse_base import AutoNoMouseBase
 from village.custom_classes.camera_draw_base import CameraDrawBase
 from village.custom_classes.camera_trigger_base import CameraTriggerBase
 from village.custom_classes.change_cycle_base import ChangeCycleBase
+from village.custom_classes.custom_area_base import CustomAreaBase
 from village.custom_classes.direct_functions_base import DirectFunctionsBase
 from village.custom_classes.online_plot_base import OnlinePlotBase
 from village.custom_classes.session_plot_base import SessionPlotBase
@@ -100,6 +101,7 @@ class Manager:
         self.change_cycle: ChangeCycleBase = ChangeCycleBase()
         self.camera_trigger: CameraTriggerBase = CameraTriggerBase()
         self.camera_draw: CameraDrawBase = CameraDrawBase()
+        self.custom_areas: list[CustomAreaBase] = []
         self.touch_trigger: TouchTriggerBase = TouchTriggerBase()
         self._auto_no_mouse_instances: dict[str, AutoNoMouseBase] = {
             "": AutoNoMouseBase()
