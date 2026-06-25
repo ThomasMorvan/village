@@ -25,6 +25,7 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QWidget
 
 from village.classes.null_classes import NullCamera
+from village.custom_classes.custom_area_base import CustomAreaBase
 from village.manager import manager
 from village.scripts.log import log
 from village.scripts.time_utils import time_utils
@@ -701,12 +702,17 @@ class Camera:
             self.x_position = -1
             self.y_position = -1
 
+    @property
+    def custom_areas(self) -> list[CustomAreaBase]:
+        """Custom detection areas (lives on manager; exposed here for the cam API)."""
+        return manager.custom_areas
+
     def _add_custom_area_mask(self, mask: np.ndarray, invert: bool) -> None:
-        if self.name != "BOX" or not manager.custom_areas:
+        if self.name != "BOX" or not self.custom_areas:
             return
         h, w = self.gray_frame.shape[:2]
         flag = cv2.THRESH_BINARY_INV if invert else cv2.THRESH_BINARY
-        for area in manager.custom_areas:
+        for area in self.custom_areas:
             if not area.active:
                 continue
             _, frame_bin = cv2.threshold(self.gray_frame, area.threshold,
