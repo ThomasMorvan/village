@@ -133,9 +133,9 @@ class CameraDrawBase:
             scale_x = device.width() / cam.width
             scale_y = device.height() / cam.height
 
+            self.draw_custom_areas_box(cam, painter, scale_x, scale_y)
             self.draw_detection_mask_box(cam, painter, scale_x, scale_y)
             self.draw_detection_areas_box(cam, painter, scale_x, scale_y)
-            self.draw_custom_areas_box(cam, painter, scale_x, scale_y)
             self.draw_detection_position_box(cam, painter, scale_x, scale_y)
 
     # ----------------------------------------------------------------------------------
