@@ -51,11 +51,16 @@ def temperatures_plot(df: pd.DataFrame, width: float, height: float) -> Figure:
     stats = pd.DataFrame(
         {"median": g.median(), "q1": g.quantile(0.25), "q3": g.quantile(0.75)}
     ).sort_index()
-    ax_hour.fill_between(stats.index, stats["q1"], stats["q3"], alpha=0.3, label="IQR")
-    ax_hour.plot(stats.index, stats["median"], lw=2, color="b", label="Median")
+    ax_hour.fill_between(stats.index, stats["q1"], stats["q3"],
+                         alpha=0.3, label="IQR")
+    ax_hour.plot(stats.index, stats["median"], lw=2, label="Median")
+    for _, group in df.groupby(df["date"].dt.date):
+        ax_hour.plot(group["date"].dt.hour, group["temperature"],
+                     color="k", alpha=0.5, lw=0.5)
     ax_hour.set_title("Average per hour")
     ax_hour.set_xlabel("Hour")
-    ax_hour.set_ylabel("Temperature")
+    ax_hour.set_ylabel("T °C")
+    ax_hour.set_xticks(range(24))
     ax_hour.legend()
 
     # Bottom-right: mean per day
