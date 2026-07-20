@@ -140,6 +140,12 @@ def system_run() -> None:
                             exception=error,
                             subject=manager.subject.name,
                         )
+                    elif device == "cam" and video_alarm_timer.has_elapsed():
+                        log.alarm(
+                            "Error in camera",
+                            exception=error,
+                            subject=manager.subject.name,
+                        )
             except queue.Empty:
                 pass
 
