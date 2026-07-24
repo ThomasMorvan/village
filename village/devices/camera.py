@@ -27,11 +27,13 @@ from PyQt5.QtWidgets import QWidget
 
 from village.classes.null_classes import NullCamera
 from village.custom_classes.custom_area_base import CustomAreaBase
-from village.scripts.error_queue import error_queue
 from village.manager import manager
+from village.scripts.error_queue import error_queue
 from village.scripts.log import log
 from village.scripts.time_utils import time_utils
 from village.settings import Color, settings
+
+BLACK_FRAME_MAX = 5
 
 # info about picamera2: https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 
@@ -208,7 +210,6 @@ class Camera:
             settings.get("SYSTEM_DIRECTORY"), name + ".jpg"
         )
         self.output = FfmpegOutput(self.path_video)
-        self.output.error_callback = self._on_ffmpeg_error
         self.filename = ""
         self.cam.pre_callback = self.pre_process
 
@@ -250,16 +251,15 @@ class Camera:
         self.box_alarm_timer = time_utils.Timer(3600)
 
         self.camera_timestamp = time_utils.now_timestamp()
+        self.last_good_frame = self.camera_timestamp  # last non-black frame
         self.watchdog_timer = QTimer()
         self.watchdog_timer.setInterval(20000)
         self.watchdog_timer.timeout.connect(self.watchdog_tick)
-        self.restart_alarm_timer = time_utils.Timer(3600)
 
         self.task_is_running = False
 
         self.cam.start()
-        if self.name == "CORRIDOR":
-            self.watchdog_timer.start()
+        self.watchdog_timer.start()
 
     def set_properties(self) -> None:
         """Updates camera detection properties from settings."""
@@ -382,12 +382,28 @@ class Camera:
                 self.name + "_" + time_start + ".csv",
             )
         self.output = FfmpegOutput(self.path_video)
-        self.output.error_callback = self._on_ffmpeg_error
         self.is_recording = True
         self.camera_timestamp = time_utils.now_timestamp()
-        if self.name == "BOX":
-            self.watchdog_timer.start()
-        self.cam.start_encoder(self.encoder, self.output, quality=self.encoder_quality)
+        try:
+            self.cam.stop_encoder()
+        except Exception:
+            pass
+        try:
+            self.cam.start_encoder(
+                self.encoder, self.output, quality=self.encoder_quality
+            )
+        except Exception:
+            self.is_recording = False
+            try:
+                error_queue.put_nowait(
+                    (
+                        "cam",
+                        "Cam " + self.name + ": start_encoder failed\n"
+                        + traceback.format_exc(),
+                    )
+                )
+            except queue.Full:
+                pass
 
     def stop_recording(self) -> None:
         """Stops recording and saves CSV data."""
@@ -395,18 +411,7 @@ class Camera:
             self.is_recording = False
             self.cam.stop_encoder()
             self.save_csv()
-        if self.name == "BOX":
-            self.watchdog_timer.stop()
         self.reset_values()
-
-    def _on_ffmpeg_error(self, exc: Exception) -> None:
-        try:
-            text = "".join(traceback.format_exception(
-                           type(exc), exc, exc.__traceback__))
-            msg = "Cam " + self.name + " ffmpeg: " + text
-            error_queue.put_nowait(("cam", msg))
-        except queue.Full:
-            pass
 
     def reset_values(self) -> None:
         """Resets all tracking and recording variables to defaults."""
@@ -500,32 +505,54 @@ class Camera:
         print()
 
     def watchdog_tick(self) -> None:
-        """Checks if the camera is still producing frames, restarts if frozen."""
-        if (
-            time_utils.now_timestamp() - self.camera_timestamp > 10
-        ):  # 10 seconds without a frame
+        """Restarts the camera if it froze OR if the ffmpeg recorder died."""
+        reason = ""
+        if time_utils.now_timestamp() - self.last_good_frame > 10:
+            reason = "no valid frames (blank/black or none) for more than 10 s"
+        elif self.is_recording:
+            ff = getattr(self.output, "ffmpeg", None)
+            if (getattr(self.output, "output_broken", False) or
+                    (ff is not None and ff.poll() is not None)):
+                reason = "ffmpeg video recorder stopped (output broken/exited)"
+        if reason:
             try:
-                self.restart_camera()
+                self.restart_camera(reason)
             except Exception:
                 pass
 
-    def restart_camera(self) -> None:
-        """Restarts the camera subprocess and watchdog."""
+    def restart_camera(self, reason: str = "not responding") -> None:
+        """Restarts the camera subprocess and watchdog.
+
+        Args:
+            reason (str): Why the restart was triggered, included in the alarm.
+        """
         self.watchdog_timer.stop()
-        if self.restart_alarm_timer.has_elapsed():
-            log.alarm(
-                "Camera "
-                + self.name
-                + " not responding. No frames received for more than "
-                + "10 seconds. Restarting the camera.",
-                subject=manager.subject.name,
-            )
-        self.cam.stop_recording()
-        self.cam.stop()
+        try:
+            error_queue.put_nowait(
+                ("cam",
+                 "Camera " + self.name + ": " + reason + ". Restarting."))
+        except queue.Full:
+            pass
+        self.is_recording = False
+        try:
+            self.cam.stop_recording()
+        except Exception:
+            pass
+        try:
+            self.cam.stop()
+        except Exception:
+            pass
         time.sleep(1)
-        self.cam.start()
+        started = False
+        try:
+            self.cam.start()
+            started = True
+        except Exception:
+            pass
+        self.camera_timestamp = time_utils.now_timestamp()
+        self.last_good_frame = self.camera_timestamp
         self.watchdog_timer.start()
-        if self.name == "CORRIDOR":
+        if started and self.name == "CORRIDOR":
             self.start_recording()
 
     def pre_process(self, request: Any) -> None:
@@ -554,6 +581,8 @@ class Camera:
                 )
                 self.task_is_running = manager.state.task_is_running()
                 self.get_gray_frame()
+                if int(self.gray_frame.max()) > BLACK_FRAME_MAX:
+                    self.last_good_frame = self.camera_timestamp
                 self.detect_and_trigger()
                 manager.camera_draw.draw(self)
                 self.write_csv()

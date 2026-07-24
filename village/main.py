@@ -112,6 +112,7 @@ def system_run() -> None:
     plot_timer = time_utils.Timer(settings.get("UPDATE_TIME_TABLE"))
     sound_alarm_timer = time_utils.Timer(3600)
     video_alarm_timer = time_utils.Timer(3600)
+    cam_alarm_timer = time_utils.Timer(3600)
     manager.check_corridor_lights()
     manager.check_box_lights()
 
@@ -140,7 +141,7 @@ def system_run() -> None:
                             exception=error,
                             subject=manager.subject.name,
                         )
-                    elif device == "cam" and video_alarm_timer.has_elapsed():
+                    elif device == "cam" and cam_alarm_timer.has_elapsed():
                         log.alarm(
                             "Error in camera",
                             exception=error,
