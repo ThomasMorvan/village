@@ -674,7 +674,8 @@ class Manager:
             and settings.get("NO_DETECTION_SUBJECT_24H") == Active.ON
         ):
             log.alarm(
-                "Subjects not detected in the last 24 hours: " + ", ".join(non_det_subs)
+                "Subjects not detected in the last 24 hours: "
+                + ", ".join(non_det_subs), repeat=True
             )
         if (
             len(non_ses_subs) > 0
@@ -682,12 +683,12 @@ class Manager:
         ):
             log.alarm(
                 "Subjects with no sessions in the last 24 hours: "
-                + ", ".join(non_ses_subs)
+                + ", ".join(non_ses_subs), repeat=True
             )
         if len(low_water_subs) > 0:
             log.alarm(
                 "Subjects with low water intake in the last 24 hours: "
-                + ", ".join(low_water_subs)
+                + ", ".join(low_water_subs), repeat=True,
             )
         if not sync and settings.get("SYNC_TYPE") != SyncType.OFF:
             log.alarm("No data sync in the last 24 hours.")

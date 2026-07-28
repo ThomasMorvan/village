@@ -82,12 +82,14 @@ class NullSoftCodeToBpod:
 
 class NullTelegramBot:
     error: str = "Error connecting to the telegram_bot "
+    pending: dict[int, str] = {}
 
-    def alarm(self, message: str) -> None:
+    def alarm(self, message: str, repeat: bool = False) -> None:
         """Sends an alarm message.
 
         Args:
             message (str): The alarm message.
+            repeat (bool): Whether the alarm is repeated until acknowledged.
         """
         return
 
