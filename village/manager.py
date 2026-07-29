@@ -668,7 +668,7 @@ class Manager:
         sessions, or syncs."""
         self.check_corridor_lights()
         text, non_det_subs, non_ses_subs, low_water_subs, sync = self.create_report(24)
-        log.alarm(text, report=True)
+        log.alarm(text, report=True, repeat=True)
         if (
             len(non_det_subs) > 0
             and settings.get("NO_DETECTION_SUBJECT_24H") == Active.ON

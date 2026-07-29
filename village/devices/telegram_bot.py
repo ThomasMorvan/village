@@ -70,8 +70,9 @@ class TelegramBot:
             repeat (bool): True to resend the alarm until it is acknowledged.
         """
         if repeat:
-            self.pending = {k: v
-                            for k, v in self.pending.items() if v != message}
+            first_line = message.split("\n")[0]
+            self.pending = {k: v for k, v in self.pending.items()
+                            if v.split("\n")[0] != first_line}
             self.alarm_id += 1
             self.pending[self.alarm_id] = message
             self.send(message, self.alarm_id)
@@ -114,7 +115,8 @@ class TelegramBot:
             await query.answer()
             self.pending.pop(int(query.data.split(":")[1]), None)
             await query.edit_message_text(query.message.text +
-                                          "\n\n✅ acknowledged")
+                                          "\n\n✅ acknowledged by " +
+                                          query.from_user.name)
         except Exception:
             log.error("Telegram error acknowledging",
                       exception=traceback.format_exc())
