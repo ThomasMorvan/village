@@ -126,7 +126,7 @@ class Log:
         type = "ALARM"
         date = time_utils.now_string()
         message = description if subject == "system" else description + " " + subject
-        self.telegram_bot.alarm(message, repeat=repeat)
+        self.telegram_bot.alarm(message, repeat=repeat, report=report)
         print("")
         print(exception)
         print("")

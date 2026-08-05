@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
 from village.classes.enums import DataTable, State
 from village.manager import manager
 from village.scripts.log import log
+from village.scripts.time_utils import time_utils
 from village.settings import settings
 
 if TYPE_CHECKING:
@@ -328,6 +329,17 @@ class Layout(QGridLayout):
         self.calibration_button = NavTabProxy(self.nav_tab_bar, 5)
         self.settings_button = NavTabProxy(self.nav_tab_bar, 6)
 
+        self.mice_button = self.create_and_add_button(
+            "MICE",
+            3,
+            112,
+            20,
+            3,
+            self.mice_button_clicked,
+            "Confirm that the mice have been checked today",
+            "lightgray",
+        )
+
         self.alarm_button = self.create_and_add_button(
             "ALARM",
             3,
@@ -390,6 +402,20 @@ class Layout(QGridLayout):
         c = "red" if alarms else "lightgray"
         sty = f"QPushButton {{background-color: {c}; font-weight: bold}}{_tt}"
         self.alarm_button.setStyleSheet(sty)
+
+        checked = manager.mice_check_done()
+        self.mice_button.setText("MICE OK" if checked else "CHECK MICE")
+        self.mice_button.setEnabled(not checked)
+        if checked:
+            at = time_utils.date_from_string(settings.get("MICE_CHECKED_AT"))
+            tooltip = "Mice checked by " + str(settings.get("MICE_CHECKED_BY"))
+            tooltip += " at " + at.strftime("%H:%M")
+        else:
+            tooltip = "Confirm that the mice have been checked today"
+        self.mice_button.setToolTip(tooltip)
+        c = "lightgray" if checked else "orange"
+        sty = f"QPushButton {{background-color: {c}; font-weight: bold}}{_tt}"
+        self.mice_button.setStyleSheet(sty)
 
         if manager.state.task_is_running():
             self.stop_button.setText("STOP TASK")
@@ -469,6 +495,11 @@ class Layout(QGridLayout):
             else:
                 self.stop_button.setEnabled(False)
                 self.online_or_force_button.setEnabled(False)
+
+    def mice_button_clicked(self) -> None:
+        """Confirms that the mice have been checked, until the reset time."""
+        manager.mice_checked("GUI")
+        self.update_status_label_buttons()
 
     def alarm_button_clicked(self) -> None:
         """Acknowledges all active alarms, stopping the telegram reminders."""

@@ -163,6 +163,7 @@ class Manager:
             hours=int(settings.get("NO_SESSION_HOURS") or 6)
         )
         self.hour_change_detector = time_utils.HourChangeDetector()
+        self.mice_alarm_sent_for: str = ""
         self.detection_change = True
         self.error_in_manual_task = False
         self.rfid_changed = False
@@ -668,7 +669,7 @@ class Manager:
         sessions, or syncs."""
         self.check_corridor_lights()
         text, non_det_subs, non_ses_subs, low_water_subs, sync = self.create_report(24)
-        log.alarm(text, report=True, repeat=True)
+        log.alarm(text, report=True)
         if (
             len(non_det_subs) > 0
             and settings.get("NO_DETECTION_SUBJECT_24H") == Active.ON
@@ -806,6 +807,51 @@ class Manager:
             low_water_subjects,
             sync,
         )
+
+    def mice_checked(self, who: str) -> None:
+        """Confirms that the mice have been checked, until the reset time.
+
+        Args:
+            who (str): Who checked them, shown in the GUI and in the log.
+        """
+        settings.set("MICE_CHECKED_AT", time_utils.now_string())
+        settings.set("MICE_CHECKED_BY", who)
+        settings.sync()  # save in case of reboot
+        log.info("Mice checked by " + who)
+
+    def mice_check_done(self) -> bool:
+        """Whether the mice have been checked since the last reset time.
+
+        Returns:
+            bool: True if someone confirmed the check.
+        """
+        reset = time_utils.time_from_setting_string(
+            settings.get("CHECK_MICE_RESET_TIME"))
+        try:
+            checked = time_utils.date_from_string(
+                settings.get("MICE_CHECKED_AT"))
+        except (ValueError, TypeError):
+            return False
+        return checked >= time_utils.previous_init_time(reset)
+
+    def check_mice_deadline(self) -> None:
+        """Alarms once a day if nobody has confirmed the check of the mice.
+
+        Called from the manager background checks, it only triggers after
+        CHECK_MICE_TIME, and only once for each day.
+        """
+        reset = time_utils.time_from_setting_string(
+            settings.get("CHECK_MICE_RESET_TIME"))
+        expired = time_utils.previous_init_time(reset)
+        sent_for = time_utils.string_from_date(expired)
+        if self.mice_alarm_sent_for == sent_for or self.mice_check_done():
+            return  # already sent or already done
+        deadline = time_utils.time_from_setting_string(
+            settings.get("CHECK_MICE_TIME"))
+        if time_utils.previous_init_time(deadline) < expired:
+            return  # the deadline not reached yet today
+        self.mice_alarm_sent_for = sent_for
+        log.alarm("Nobody has checked the mice today", repeat=True)
 
     def send_heartbeat(self) -> None:
         """Sends a heartbeat signal to the healthcheck URL if configured."""

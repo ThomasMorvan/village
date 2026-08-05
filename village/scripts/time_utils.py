@@ -262,6 +262,19 @@ class TimeUtils:
             microsecond=first.microsecond,
         )
 
+    def previous_init_time(self, first: datetime.time) -> datetime.datetime:
+        """Opposite of tomorrow_init_time, gives the last time it happened.
+        Asking for 20:00 returns today at 20:00 when it is already 21:00, and
+        yesterday at 20:00 when it is only 19:00.
+
+        Args:
+            first (datetime.time): The time of the day to look for.
+
+        Returns:
+            datetime.datetime: The last date and time when it happened.
+        """
+        return self.tomorrow_init_time(first) - datetime.timedelta(days=1)
+
     def range_24_hours(
         self, day_date: datetime.datetime, first_init_time: datetime.time
     ) -> Tuple[datetime.datetime, datetime.datetime]:
