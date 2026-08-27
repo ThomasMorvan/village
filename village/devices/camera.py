@@ -218,6 +218,7 @@ class Camera:
         self.annotation = ""
         self.trial = 0
         self.tracking = False
+        self.night = False
         self.x_position = -1
         self.y_position = -1
         self.frames: list[int] = []
@@ -276,6 +277,7 @@ class Camera:
         # actual visible-light state so it follows AUTO and manual overrides.
         # Reloaded on cycle change / light toggle / edit via self.change.
         night = self.name == "CORRIDOR" and not manager.corridor_visible_on()
+        self.night = night
         for i in range(1, self.number_of_areas + 1):
             area = settings.get("AREA" + str(i) + "_" + self.name)
             self.areas.append(area[0:4])
@@ -595,27 +597,17 @@ class Camera:
 
     # @time_utils.measure_time
     def detect_and_trigger(self) -> None:
-        """Performs detection based on color settings and position tracking."""
-        if self.color == Color.BLACK:
-            if self.tracking:
-                self.detect_black_position_contours()
-                if self.x_position != -1:
-                    self.trigger_event.set()
-                    self.trigger()
-                else:
-                    self.trigger_event.clear()
+        """Runs detection (pluggable per-camera via manager.detection_corridor
+        or manager.detection_box)."""
+        detector = (manager.detection_corridor if self.name == "CORRIDOR"
+                    else manager.detection_box)
+        detector.detect(self)
+        if self.tracking:
+            if self.x_position != -1:
+                self.trigger_event.set()
+                self.trigger()
             else:
-                self.detect_black()
-        else:
-            if self.tracking:
-                self.detect_white_position_contours()
-                if self.x_position != -1:
-                    self.trigger_event.set()
-                    self.trigger()
-                else:
-                    self.trigger_event.clear()
-            else:
-                self.detect_white()
+                self.trigger_event.clear()
 
     def trigger(self) -> None:
         """Checks if detection zones are triggered and notifies the manager."""
@@ -642,32 +634,6 @@ class Camera:
 
         if self.task_is_running:
             manager.camera_trigger.trigger(self)
-
-    def detect_black(self) -> None:
-        """Detects black objects in defined areas using thresholding."""
-        for index, (x1, y1, x2, y2) in enumerate(self.areas):
-            if self.areas_active[index]:
-                roi = self.gray_frame[y1:y2, x1:x2]
-                threshold = self.thresholds[index]
-                _, thresh = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY_INV)
-                self.masks[index] = thresh
-                self.counts[index] = cv2.countNonZero(thresh)
-            else:
-                self.masks[index] = -1
-                self.counts[index] = -1
-
-    def detect_white(self) -> None:
-        """Detects white objects in defined areas using thresholding."""
-        for index, (x1, y1, x2, y2) in enumerate(self.areas):
-            if self.areas_active[index]:
-                roi = self.gray_frame[y1:y2, x1:x2]
-                threshold = self.thresholds[index]
-                _, thresh = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY)
-                self.masks[index] = thresh
-                self.counts[index] = cv2.countNonZero(thresh)
-            else:
-                self.masks[index] = -1
-                self.counts[index] = -1
 
     def detect_black_position_components(self) -> None:
         """Detects position of black mouse using connected components."""
@@ -764,107 +730,6 @@ class Camera:
             inside = cv2.bitwise_and(frame_bin, frame_bin,
                                      mask=area.mask(h, w))
             np.maximum(mask, inside, out=mask)
-
-    def detect_black_position_contours(self) -> None:
-        """Detects position of black mouse using contours."""
-        mask = np.zeros_like(self.gray_frame, dtype=np.uint8)
-        for index, (x1, y1, x2, y2) in enumerate(self.areas):
-            if self.areas_active[index]:
-                roi = self.gray_frame[y1:y2, x1:x2]
-                if roi.size == 0:
-                    self.masks[index] = -1
-                    self.counts[index] = -1
-                    continue
-                threshold = self.thresholds[index]
-                _, roi_bin = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY_INV)
-                roi_bin = np.asarray(roi_bin, dtype=np.uint8)
-                sub = mask[y1:y2, x1:x2]
-                np.maximum(sub, roi_bin, out=sub)
-                self.masks[index] = roi_bin
-                self.counts[index] = cv2.countNonZero(roi_bin)
-            else:
-                self.masks[index] = -1
-                self.counts[index] = -1
-
-        self._add_custom_area_mask(mask, invert=True)
-
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        if not contours:
-            self.x_position = -1
-            self.y_position = -1
-            return
-
-        best_c = None
-        best_area = 0.0
-        for c in contours:
-            a = cv2.contourArea(c)
-            if a >= self.zero_or_one_mouse and a > best_area:
-                best_area = a
-                best_c = c
-
-        if best_c is None:
-            self.x_position = -1
-            self.y_position = -1
-            return
-
-        M = cv2.moments(best_c)
-        if M["m00"] > 0:
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
-            self.x_position = cx
-            self.y_position = cy
-        else:
-            self.x_position = -1
-            self.y_position = -1
-
-    def detect_white_position_contours(self) -> None:
-        """Detects position of white mouse using contours."""
-        mask = np.zeros_like(self.gray_frame, dtype=np.uint8)
-        for index, (x1, y1, x2, y2) in enumerate(self.areas):
-            if self.areas_active[index]:
-                roi = self.gray_frame[y1:y2, x1:x2]
-                threshold = self.thresholds[index]
-                _, roi_bin = cv2.threshold(roi, threshold, 255, cv2.THRESH_BINARY)
-                sub = mask[y1:y2, x1:x2]
-                np.maximum(sub, roi_bin, out=sub)
-                self.masks[index] = roi_bin
-                self.counts[index] = cv2.countNonZero(roi_bin)
-            else:
-                self.masks[index] = -1
-                self.counts[index] = -1
-
-        self._add_custom_area_mask(mask, invert=False)
-
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        if not contours:
-            self.x_position = -1
-            self.y_position = -1
-            return
-
-        best_c = None
-        best_area = 0.0
-        for c in contours:
-            a = cv2.contourArea(c)
-            if a >= self.zero_or_one_mouse and a > best_area:
-                best_area = a
-                best_c = c
-
-        if best_c is None:
-            self.x_position = -1
-            self.y_position = -1
-            return
-
-        M = cv2.moments(best_c)
-        if M["m00"] > 0:
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
-            self.x_position = cx
-            self.y_position = cy
-        else:
-            self.x_position = -1
-            self.y_position = -1
 
     def write_csv(self) -> None:
         """Appends current frame data to internal lists for CSV export."""

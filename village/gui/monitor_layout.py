@@ -36,6 +36,7 @@ from village.classes.enums import (
     ScreenActive,
 )
 from village.custom_classes.auto_no_mouse_base import AutoNoMouseBase
+from village.custom_classes.camera_detection_base import CameraDetectionBase
 from village.devices.camera import cam_box, cam_corridor
 from village.devices.chip import (
     Motor,
@@ -1598,6 +1599,49 @@ class DetectionLayout(Layout):
             self.lbs.append(lb)
             column += 26
 
+    def _build_detection_param_widgets(self, detector: CameraDetectionBase,
+                                       row: int, column: int) -> None:
+        """Renders a custom CameraDetectionBase subclass's PARAMS (e.g. an
+        erosion kernel size) as editable fields, plus one button per name
+        in its ACTIONS list."""
+        widgets: dict[str, object] = {}
+
+        def on_changed() -> None:
+            kwargs = {}
+            for param in detector.PARAMS:
+                widget = widgets.get(param.name)
+                if widget is None:
+                    continue
+                try:
+                    kwargs[param.name] = param.clamp(widget.text())
+                except (ValueError, TypeError):
+                    widget.setText(str(getattr(detector,
+                                               param.name, param.default)))
+            detector.update_params(**kwargs)
+
+        for param in detector.PARAMS:
+            self.create_and_add_label(param.label, row, column, 12, 2, "black",
+                                      description=param.tooltip)
+            widget = self.create_and_add_line_edit(
+                            str(getattr(detector, param.name, param.default)),
+                            row, column + 12, 8, 2, lambda: None,)
+            widget.editingFinished.connect(on_changed)
+            widgets[param.name] = widget
+            row += 2
+
+        button_width = 7
+        col = column
+        for method_name in detector.ACTIONS:
+            method = getattr(detector, method_name, None)
+            if not callable(method):
+                continue
+            label = method_name.replace("_", " ").title()
+            _str = f"{label} action for {detector.__class__.__name__}"
+            self.create_and_add_button(label, row, col, button_width, 2,
+                                       method, color="lightblue",
+                                       description=_str)
+            col += button_width
+
     def draw_area_buttons_corridor(
         self, name: str, row: int, column: int, color: str
     ) -> None:
@@ -1694,6 +1738,10 @@ class DetectionLayout(Layout):
             self.lbs.append(lb)
             row += 2
 
+            self._build_detection_param_widgets(
+                manager.detection_corridor, row, column
+            )
+
         row = 2
         column = 102
         width = 10
@@ -1738,6 +1786,8 @@ class DetectionLayout(Layout):
         )
         self.lbs.append(lb)
         row += 2
+
+        self._build_detection_param_widgets(manager.detection_box, row, column)
 
     def _camera_changed(self, box: bool = True, corridor: bool = False) -> None:
         if box:

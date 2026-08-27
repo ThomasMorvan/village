@@ -16,6 +16,8 @@ from village.calibration.sound_calibration import SoundCalibration
 from village.custom_classes.after_session_base import AfterSessionBase
 from village.custom_classes.auto_no_mouse_base import AutoNoMouseBase
 from village.custom_classes.calibration_base import CalibrationBase
+from village.custom_classes.camera_detection_base import (
+            BoxDetectionBase, CorridorDetectionBase)
 from village.custom_classes.camera_draw_base import CameraDrawBase
 from village.custom_classes.camera_trigger_base import CameraTriggerBase
 from village.custom_classes.change_cycle_base import ChangeCycleBase
@@ -46,6 +48,8 @@ def import_all(manager) -> None:
     change_cycle_found = 0
     camera_trigger_found = 0
     camera_draw_found = 0
+    corridor_detection_found = 0
+    box_detection_found = 0
     touch_trigger_found = 0
     auto_no_mouse_found = 0
     direct_functions_found = 0
@@ -58,6 +62,8 @@ def import_all(manager) -> None:
     change_cycle_correct = False
     camera_trigger_correct = False
     camera_draw_correct = False
+    corridor_detection_correct = False
+    box_detection_correct = False
     touch_trigger_correct = False
     auto_no_mouse_correct = False
     sound_path = ""
@@ -172,6 +178,20 @@ def import_all(manager) -> None:
                         c = cls()
                         manager.camera_draw = c
                         camera_draw_correct = True
+                elif (
+                    issubclass(cls, CorridorDetectionBase)
+                    and cls != CorridorDetectionBase
+                ):
+                    corridor_detection_found += 1
+                    if corridor_detection_found == 1:
+                        manager.detection_corridor = cls()
+                        corridor_detection_correct = True
+                elif (issubclass(cls, BoxDetectionBase)
+                      and cls != BoxDetectionBase):
+                    box_detection_found += 1
+                    if box_detection_found == 1:
+                        manager.detection_box = cls()
+                        box_detection_correct = True
                 elif issubclass(cls, TouchTriggerBase) and cls != TouchTriggerBase:
                     touch_trigger_found += 1
                     if touch_trigger_found == 1:
@@ -230,6 +250,8 @@ def import_all(manager) -> None:
         ("Change Cycle Run", change_cycle_found, change_cycle_correct),
         ("Camera Trigger", camera_trigger_found, camera_trigger_correct),
         ("Camera Draw", camera_draw_found, camera_draw_correct),
+        ("Corridor Detection", corridor_detection_found, corridor_detection_correct),
+        ("Box Detection", box_detection_found, box_detection_correct),
         ("Touch Trigger", touch_trigger_found, touch_trigger_correct),
         ("Auto No Mouse", auto_no_mouse_found, auto_no_mouse_correct),
         ("Direct Functions", direct_functions_found, direct_functions_correct),
