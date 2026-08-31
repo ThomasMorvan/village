@@ -503,7 +503,7 @@ class Layout(QGridLayout):
 
     def alarm_button_clicked(self) -> None:
         """Acknowledges all active alarms, stopping the telegram reminders."""
-        log.telegram_bot.pending.clear()
+        log.telegram_bot.acknowledge_all("GUI")
         self.update_status_label_buttons()
 
     def exit_button_clicked(self) -> None:

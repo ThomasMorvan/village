@@ -99,6 +99,10 @@ class NullTelegramBot:
         """No-op: no bot to register commands on."""
         return
 
+    def acknowledge_all(self, by: str, first_line: str | None = None) -> None:
+        """No-op: no bot to acknowledge alarms on."""
+        return
+
 
 class NullScale:
     error: str = "Error connecting to the scale "

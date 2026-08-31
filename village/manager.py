@@ -822,6 +822,8 @@ class Manager:
         settings.set("MICE_CHECKED_BY", who)
         settings.sync()  # save in case of reboot
         log.info("Mice checked by " + who)
+        log.telegram_bot.acknowledge_all(
+            who, first_line="Nobody has checked the mice today")
 
     def mice_check_done(self) -> bool:
         """Whether the mice have been checked since the last reset time.

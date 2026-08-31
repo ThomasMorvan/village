@@ -182,6 +182,36 @@ class TelegramBot:
             log.error("Telegram error acknowledging",
                       exception=traceback.format_exc())
 
+    def acknowledge_all(self, by: str, first_line: str | None = None) -> None:
+        """Acknowledges pending alarms (e.g. from the UI button) and also
+        updates the messages in the telegram chat.
+
+        Args:
+            by (str): Who acknowledged the alarms, shown in the chat.
+            first_line (str | None): If given, only acknowledge alarms whose
+                first line matches (e.g. the mice-check alarm), instead of
+                all of them.
+        """
+        acked_ids = [k for k, v in self.pending.items()
+                     if (first_line is None
+                         or v.message.split("\n")[0] == first_line)]
+        for ack_id in acked_ids:
+            alarm = self.pending.pop(ack_id)
+            if alarm.message_id == 0:
+                continue
+            try:
+                t = self.token
+                url = "https://api.telegram.org/bot%s/editMessageText" % t
+                values = {"chat_id": self.chat,
+                          "message_id": alarm.message_id,
+                          "text": (alarm.text() +
+                                   "\n\n✅ acknowledged by " + by)}
+                data = parse.urlencode(values)
+                request.urlopen(url, data.encode("utf-8"), timeout=10)
+            except Exception:
+                log.error("Telegram error acknowledging",
+                          exception=traceback.format_exc())
+
     async def repeat_alarms(self) -> None:
         """Resends unacknowledged alarms, each one on its own schedule."""
         while True:
