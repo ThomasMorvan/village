@@ -257,8 +257,9 @@ def system_run() -> None:
 
             case State.RUN_FIRST:
                 # Task running, waiting for the corridor to become empty"
-                if id != manager.subject.tag and id != "":
-                    name = manager.subjects.get_last_entry_name(column="tag", value=id)
+                if id != "" and not manager.subject.has_tag(id):
+                    name = manager.subjects.get_last_entry_name(column="tag",
+                                                                value=id)
                     if name:
                         log.alarm(
                             "Wrong RFID detection. Subject: "
@@ -298,8 +299,9 @@ def system_run() -> None:
 
             case State.RUN_CLOSED:
                 # Task running, the subject cannot leave yet
-                if id != manager.subject.tag and id != "":
-                    name = manager.subjects.get_last_entry_name(column="tag", value=id)
+                if id != "" and not manager.subject.has_tag(id):
+                    name = manager.subjects.get_last_entry_name(column="tag",
+                                                                value=id)
                     if name:
                         log.alarm(
                             "Wrong RFID detection. Subject: "
@@ -312,11 +314,8 @@ def system_run() -> None:
                         )
                         manager.state = State.OPEN_DOOR2_STOP
                         log.info("Going to OPEN_DOOR2_STOP State")
-                elif (
-                    id == manager.subject.tag
-                    and id != ""
-                    and not manager.old_version_rfid
-                ):
+                elif (manager.subject.has_tag(id)
+                      and not manager.old_version_rfid):
                     log.alarm(
                         "Wrong RFID detection: "
                         + " The main subject was detected in the corridor when it"
@@ -351,8 +350,9 @@ def system_run() -> None:
                     if tare_timer.has_elapsed():
                         scale.tare()
 
-                if id != manager.subject.tag and id != "":
-                    name = manager.subjects.get_last_entry_name(column="tag", value=id)
+                if id != "" and not manager.subject.has_tag(id):
+                    name = manager.subjects.get_last_entry_name(column="tag",
+                                                                value=id)
                     if name:
                         log.alarm(
                             "Wrong RFID detection. Subject: "

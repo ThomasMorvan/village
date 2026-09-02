@@ -64,6 +64,21 @@ class Subject:
             log.alarm("Invalid data in subjects.csv")
             return False
 
+    def has_tag(self, tag: str) -> bool:
+        """Checks if a tag belongs to this subject.
+
+        The 'tag' field can hold several comma-separated tags, for subjects
+        implanted with more than one RFID chip.
+
+        Args:
+            tag (str): The tag read by the RFID reader.
+
+        Returns:
+            bool: True if the tag is one of the subject's tags.
+        """
+        return tag != "" and tag in [t.strip()
+                                     for t in str(self.tag).split(",")]
+
     def minimum_time_ok(self) -> bool:
         """Checks if the minimum time between sessions has passed.
 

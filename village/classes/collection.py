@@ -146,6 +146,25 @@ class Collection:
             last.to_csv(self.path, index=False, sep=";")
             self.df = last
 
+    def rows_matching(self, column: str, value: str) -> pd.DataFrame:
+        """Rows where the column equals value, or lists it comma-separated.
+
+        A subject implanted with several RFID chips stores them as "tag1,tag2",
+        so any of them identifies it.
+
+        Args:
+            column (str): The column to search.
+            value (str): The value to match.
+
+        Returns:
+            pd.DataFrame: The matching rows.
+        """
+        cells = self.df[column]
+        mask = cells.apply(
+            lambda c: value in [v.strip() for v in str(c).split(",")]
+        )
+        return self.df[mask.astype(bool)]
+
     def get_last_entry(self, column: str, value: str) -> Union[pd.Series, None]:
         """Gets the last entry matching a specific value in a column.
 
@@ -156,7 +175,7 @@ class Collection:
         Returns:
             Union[pd.Series, None]: The last matching row, or None.
         """
-        column_df: pd.DataFrame = self.df[self.df[column].astype(str) == value]
+        column_df: pd.DataFrame = self.rows_matching(column, value)
         if not column_df.empty:
             return column_df.iloc[-1]
         return None
@@ -171,7 +190,7 @@ class Collection:
         Returns:
             str | None: The name, or None.
         """
-        column_df: pd.DataFrame = self.df[self.df[column].astype(str) == value]
+        column_df: pd.DataFrame = self.rows_matching(column, value)
         name = None
         if not column_df.empty:
             row = column_df.iloc[-1]

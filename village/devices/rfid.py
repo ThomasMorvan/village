@@ -76,9 +76,20 @@ class Rfid:
                 break
 
     def update_multiple(self) -> None:
-        """Updates the `multiple` flag if more than one unique ID is in history."""
-        unique_ids = set(id for id, _ in self.id_history)
-        self.multiple = len(unique_ids) > 1
+        """Updates the `multiple` flag if
+        the recent IDs belong to different subject.
+        Put a comma-separated list of all the tags for a same subject if there
+        are multiple tags implanted in the same subject so it does not flag.
+        """
+        owners = set()
+        for id, _ in self.id_history:
+            try:
+                name = manager.subjects.get_last_entry_name(column="tag",
+                                                            value=id)
+            except Exception:
+                name = None
+            owners.add(name if name else id)
+        self.multiple = len(owners) > 1
 
     def stop(self) -> None:
         """Stops the serial reading thread."""
