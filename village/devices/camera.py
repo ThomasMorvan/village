@@ -219,6 +219,7 @@ class Camera:
         self.trial = 0
         self.tracking = False
         self.night = False
+        self.detected_contour: np.ndarray | None = None
         self.x_position = -1
         self.y_position = -1
         self.frames: list[int] = []

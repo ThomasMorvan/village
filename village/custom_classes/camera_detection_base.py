@@ -147,6 +147,7 @@ class CameraDetectionBase:
                                        cv2.CHAIN_APPROX_SIMPLE)
 
         if not contours:
+            cam.detected_contour = None
             cam.x_position = -1
             cam.y_position = -1
             return
@@ -160,9 +161,12 @@ class CameraDetectionBase:
                 best_c = c
 
         if best_c is None:
+            cam.detected_contour = None
             cam.x_position = -1
             cam.y_position = -1
             return
+
+        cam.detected_contour = best_c
 
         M = cv2.moments(best_c)
         if M["m00"] > 0:
@@ -197,6 +201,7 @@ class CameraDetectionBase:
                                        cv2.CHAIN_APPROX_SIMPLE)
 
         if not contours:
+            cam.detected_contour = None
             cam.x_position = -1
             cam.y_position = -1
             return
@@ -210,9 +215,12 @@ class CameraDetectionBase:
                 best_c = c
 
         if best_c is None:
+            cam.detected_contour = None
             cam.x_position = -1
             cam.y_position = -1
             return
+
+        cam.detected_contour = best_c
 
         M = cv2.moments(best_c)
         if M["m00"] > 0:
