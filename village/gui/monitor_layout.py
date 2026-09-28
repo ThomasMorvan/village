@@ -911,6 +911,14 @@ class BoxLayout(Layout):
                 )
                 self.buttons.append(button2)
 
+            # PWM value used by the LED buttons
+            self.create_and_add_label(
+                "LED PWM (0-255)", 16 + bpod_row, bpod_col, 8, 1, "black"
+            )
+            self.led_pwm_edit = self.create_and_add_line_edit(
+                "255", 16 + bpod_row, bpod_col + 8, 8, 1, lambda: None
+            )
+
     def draw_motor_buttons(
         self, name: str, row: int, column: int, motor: Motor | MotorOld | NullMotor
     ) -> None:
@@ -1055,7 +1063,11 @@ class BoxLayout(Layout):
             close = True
         else:
             close = False
-        manager.task.bpod.led(i, close)
+        try:
+            value = min(max(int(self.led_pwm_edit.text()), 0), 255)
+        except ValueError:
+            value = 255
+        manager.task.bpod.led(i, close, value)
 
     def water_clicked(self, i=0) -> None:
         """Delivers water for a specific port.

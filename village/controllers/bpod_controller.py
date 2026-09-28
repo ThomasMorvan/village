@@ -220,31 +220,34 @@ class BpodController:
             value=value,
         )
 
-    def led(self, i: int, close: bool = False) -> None:
+    def led(self, i: int, close: bool = False, value: int = 255) -> None:
         """Triggers an LED in a separate thread.
 
         Args:
             i (int): LED index.
             close (bool): Whether to close connection after triggered.
+            value (int): PWM value 0-255.
         """
         thread = threading.Thread(
             target=self.led_thread,
             args=(
                 i,
                 close,
+                value,
             ),
         )
         thread.start()
 
-    def led_thread(self, i: int, close: bool) -> None:
+    def led_thread(self, i: int, close: bool, value: int = 255) -> None:
         """Thread function to blink an LED.
 
         Args:
             i (int): LED index.
             close (bool): Whether to close connection after.
+            value (int): PWM value 0-255.
         """
         port = "PWM" + str(i)
-        self.manual_override_output((port, 255))
+        self.manual_override_output((port, value))
         time.sleep(1)
         self.manual_override_output((port, 0))
         if close:
